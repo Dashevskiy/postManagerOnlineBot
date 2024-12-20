@@ -1,0 +1,33 @@
+# Node.js (Backend)
+backend/node_modules/  # Папка с зависимостями Node.js
+backend/npm-debug.log* # Логи ошибок npm
+backend/.env           # Файл с переменными окружения для backend
+
+# React (Frontend)
+frontend/node_modules/ # Папка с зависимостями React
+frontend/build/        # Собранные файлы React-приложения
+frontend/.env          # Файл с переменными окружения для frontend
+
+# Общие исключения
+*.log                  # Логи (например, ошибки Node.js или npm)
+*.DS_Store             # Системные файлы macOS
+*.env.local            # Локальные переменные окружения
+.idea/                 # Конфигурация WebStorm/IntelliJ
+.vscode/               # Настройки VS Code
+Thumbs.db              # Системные файлы Windows
+# Node.js
+node_modules/
+npm-debug.log*
+.env
+
+# React (Frontend)
+frontend/build/
+frontend/.env
+
+# Общие исключения
+*.log
+*.DS_Store
+.env.local
+.idea/
+.vscode/
+Thumbs.db

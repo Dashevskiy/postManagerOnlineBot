@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  backend:
+    build: ./backend
+    command: node src/bot.js
+    environment:
+      - BOT_TOKEN=your_bot_token
+    volumes:
+      - ./backend:/app
+    restart: always
+  frontend:
+    build: ./frontend
+    command: npm start
+    ports:
+      - "3000:3000"
+    restart: always
