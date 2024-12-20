@@ -53,7 +53,7 @@ async function connectTelegramClient() {
 const fs = require('fs');
 const path = require('path');
 
-async function getChannelMessages(channelUsername) {
+async function getChannelMessages(channelUsername, ctx) {
   try {
     console.log(`Получение сообщений из канала: ${channelUsername}`);
     const messages = await client.getMessages(channelUsername, { limit: 5 });
@@ -68,8 +68,13 @@ async function getChannelMessages(channelUsername) {
         if (msg.message) {
           return `Текст: ${msg.message}`;
         } else if (msg.media) {
-          const mediaPath = await saveMedia(msg.media);
-          return `Медиа сообщение: ${mediaPath}`;
+          // Отправляем медиа напрямую
+          await client.downloadMedia(msg.media, {
+            outputStream: async (chunk) => {
+              await ctx.replyWithPhoto({ source: chunk });
+            },
+          });
+          return 'Медиа сообщение отправлено!';
         } else {
           return `Сообщение неизвестного формата.`;
         }
@@ -80,26 +85,6 @@ async function getChannelMessages(channelUsername) {
     return [`Не удалось получить сообщения из канала "${channelUsername}".`];
   }
 }
-
-// Функция для сохранения медиа
-async function saveMedia(media) {
-  try {
-    const downloadPath = path.join(__dirname, 'downloads'); // Папка для сохранения
-    if (!fs.existsSync(downloadPath)) {
-      fs.mkdirSync(downloadPath);
-    }
-
-    const filePath = path.join(downloadPath, `${media.fileReference.toString('hex')}.jpg`); // Сохраняем как .jpg
-    await client.downloadMedia(media, { file: filePath });
-    console.log(`Медиа сохранено в ${filePath}`);
-    return filePath;
-  } catch (err) {
-    console.error('Ошибка при сохранении медиа:', err.message);
-    return 'Не удалось сохранить медиа.';
-  }
-}
-
-
 
 connectTelegramClient();
 

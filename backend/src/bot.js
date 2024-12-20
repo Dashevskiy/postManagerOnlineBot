@@ -76,8 +76,14 @@ bot.command('get_posts', async (ctx) => {
 
       for (const msg of messages) {
         if (msg.startsWith('Медиа сообщение:')) {
-          const mediaPath = msg.replace('Медиа сообщение: ', '').trim();
-          await ctx.replyWithPhoto({ source: mediaPath }); // Отправляем медиа как фото
+          const media = msg.replace('Медиа сообщение: ', '').trim();
+
+          // Загружаем и отправляем медиа
+          await client.downloadMedia(media, {
+            outputStream: async (chunk) => {
+              await ctx.replyWithPhoto({ source: chunk });
+            },
+          });
         } else {
           await ctx.reply(msg); // Отправляем текстовые сообщения
         }
@@ -87,6 +93,7 @@ bot.command('get_posts', async (ctx) => {
     }
   }
 });
+
 
 
 
