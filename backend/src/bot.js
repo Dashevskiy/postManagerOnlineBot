@@ -66,23 +66,19 @@ bot.command('get_posts', async (ctx) => {
   const userId = ctx.from.id;
   const userChannels = data[userId]?.channels || [];
 
-  if (!userChannels.length) {
-    return ctx.reply('Вы ещё не добавили ни одного канала.');
-  }
+  if (!userChannels.length) return ctx.reply('Вы ещё не добавили ни одного канала.');
 
   for (const channel of userChannels) {
     try {
       const chat = await bot.telegram.getChat(channel.id);
-      const history = await bot.telegram.getChatHistory(chat.id, { limit: 5 }); // Получаем последние 5 сообщений
+      const history = await bot.telegram.getChatHistory(chat.id, { limit: 5 }); // Последние 5 сообщений
 
-      ctx.reply(`📢 Последние посты из канала "${chat.title}":`);
-      for (const message of history) {
-        const content = message.text || 'Медиа или другой контент';
-        ctx.reply(content);
+      for (const message of history.messages) {
+        ctx.reply(`📢 ${chat.title}: ${message.text || 'Медиа/контент'}`);
       }
     } catch (error) {
       console.error(error);
-      ctx.reply(`Не удалось получить посты из канала ${channel.username || channel.id}`);
+      ctx.reply(`Не удалось получить сообщения из канала ${channel.username || channel.id}`);
     }
   }
 });
