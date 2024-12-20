@@ -49,6 +49,7 @@ async function connectTelegramClient() {
     console.error('Ошибка подключения к Telegram:', error.message);
   }
 }
+
 async function getChannelMessages(channelUsername) {
   try {
     console.log(`Получение сообщений из канала: ${channelUsername}`);
@@ -58,6 +59,12 @@ async function getChannelMessages(channelUsername) {
       console.log(`Нет сообщений в канале: ${channelUsername}`);
       return [`Нет новых сообщений в канале "${channelUsername}".`];
     }
+
+    // Логируем структуру каждого сообщения
+    console.log(`Сообщения из канала "${channelUsername}":`);
+    messages.forEach((msg, index) => {
+      console.log(`Сообщение ${index + 1}:`, msg);
+    });
 
     return messages.map((msg) => {
       if (msg.message) {

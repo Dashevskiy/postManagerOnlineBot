@@ -73,10 +73,13 @@ bot.command('get_posts', async (ctx) => {
   for (const channel of userChannels) {
     try {
       const messages = await getChannelMessages(channel);
-      ctx.reply(`📢 Последние посты из канала "${channel}":`);
 
-      for (const msg of messages) {
-        await ctx.reply(msg); // Отправляем каждое сообщение отдельно
+      if (messages.length === 0) {
+        ctx.reply(`Нет новых сообщений в канале "${channel}".`);
+      } else {
+        for (const msg of messages) {
+          await ctx.reply(msg); // Отправляем каждое сообщение отдельно
+        }
       }
     } catch (err) {
       ctx.reply(`Не удалось получить сообщения из канала "${channel}": ${err.message}`);
