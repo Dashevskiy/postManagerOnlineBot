@@ -7,10 +7,10 @@ const bot = new Telegraf(BOT_TOKEN);
 const data = loadData();
 
 // Подключение к Telegram Client при запуске
-  connectTelegramClient()
+connectTelegramClient()
   .then(() => {
     console.log('Telegram Client подключён');
-    watchChannelUpdates(); // Вызов функции отслеживания сообщений
+    watchChannelUpdates(); // Начинаем отслеживать новые сообщения
   })
   .catch((err) => console.error('Ошибка подключения к Telegram Client:', err.message));
 
@@ -41,11 +41,25 @@ bot.command('add_channel', async (ctx) => {
       data[userId].channels.push(channel);
       saveData(data);
       msgCtx.reply(`Канал "${channel}" добавлен!`);
+
+      // Настроить отслеживание сообщений для нового канала
+      const chat = await client.getEntity(channel);
+      client.addEventHandler(async (event) => {
+        if (event.chatId === chat.id && event.message) {
+          console.log(`Новое сообщение в канале "${channel}": ${event.message.message}`);
+
+          // Пересылаем сообщение пользователю
+          if (data[userId].channels.includes(channel)) {
+            bot.telegram.sendMessage(userId, `Новое сообщение из канала ${channel}: ${event.message.message}`);
+          }
+        }
+      }, { chats: [chat.id] });
     } else {
       msgCtx.reply('Этот канал уже добавлен.');
     }
   });
 });
+
 
 // Команда /get_posts
 bot.command('get_posts', async (ctx) => {
@@ -76,14 +90,17 @@ bot.command('get_posts', async (ctx) => {
 
 async function watchChannelUpdates() {
   try {
-    const userChannels = Object.values(data)
+    const uniqueChannels = Object.values(data)
       .flatMap((user) => user.channels)
       .filter((value, index, self) => self.indexOf(value) === index); // Уникальные каналы
 
-    for (const channel of userChannels) {
-      const chat = await client.getEntity(channel);
-      client.addEventHandler((event) => {
-        if (event.chatId === chat.id) {
+    for (const channel of uniqueChannels) {
+      const chat = await client.getEntity(channel); // Получаем информацию о канале
+      client.addEventHandler(async (event) => {
+        if (event.chatId === chat.id && event.message) {
+          console.log(`Новое сообщение в канале "${channel}": ${event.message.message}`);
+
+          // Пересылаем сообщение всем пользователям, подписанным на канал
           Object.entries(data).forEach(([userId, userData]) => {
             if (userData.channels.includes(channel)) {
               bot.telegram.sendMessage(userId, `Новое сообщение из канала ${channel}: ${event.message.message}`);
@@ -96,6 +113,7 @@ async function watchChannelUpdates() {
     console.error('Ошибка при отслеживании каналов:', err.message);
   }
 }
+
 
 // Запуск бота
 bot.launch().then(() => console.log('Бот запущен!'));
