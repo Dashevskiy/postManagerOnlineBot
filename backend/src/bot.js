@@ -95,12 +95,13 @@ async function watchChannelUpdates() {
       const chat = await client.getEntity(channel); // Получаем информацию о канале
       client.addEventHandler(async (event) => {
         if (event.chatId === chat.id && event.message) {
-          console.log(`Новое сообщение в канале "${channel}": ${event.message.message}`);
+          const messageText = event.message.message || 'Сообщение содержит медиа.';
+          console.log(`Новое сообщение в канале "${channel}": ${messageText}`);
 
           // Пересылаем сообщение всем пользователям, подписанным на канал
           Object.entries(data).forEach(([userId, userData]) => {
             if (userData.channels.includes(channel)) {
-              bot.telegram.sendMessage(userId, `Новое сообщение из канала ${channel}: ${event.message.message}`);
+              bot.telegram.sendMessage(userId, `Новое сообщение из канала "${channel}": ${messageText}`);
             }
           });
         }
@@ -110,6 +111,7 @@ async function watchChannelUpdates() {
     console.error('Ошибка при отслеживании каналов:', err.message);
   }
 }
+
 
 
 // Запуск бота

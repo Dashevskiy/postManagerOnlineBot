@@ -51,16 +51,19 @@ async function connectTelegramClient() {
 }
 async function getChannelMessages(channelUsername) {
   try {
+    console.log(`Получение сообщений из канала: ${channelUsername}`);
     const messages = await client.getMessages(channelUsername, { limit: 5 });
-    if (messages.length === 0) {
-      return [`Нет новых сообщений в канале ${channelUsername}`];
+
+    if (!messages || messages.length === 0) {
+      console.log(`Нет сообщений в канале: ${channelUsername}`);
+      return [`Нет новых сообщений в канале "${channelUsername}".`];
     }
 
     return messages.map((msg) => {
       if (msg.message) {
-        return `Текст: ${msg.message}`;
+        return `Сообщение: ${msg.message}`;
       } else if (msg.media) {
-        return `Сообщение содержит медиа: ${msg.media.constructor.name}`;
+        return `Медиа сообщение: ${msg.media.constructor.name}`;
       } else {
         return `Сообщение неизвестного формата.`;
       }
@@ -70,7 +73,6 @@ async function getChannelMessages(channelUsername) {
     return [`Не удалось получить сообщения из канала "${channelUsername}".`];
   }
 }
-
 
 
 connectTelegramClient();
