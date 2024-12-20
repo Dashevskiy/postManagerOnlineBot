@@ -49,15 +49,14 @@ async function connectTelegramClient() {
     console.error('Ошибка подключения к Telegram:', error.message);
   }
 }
-
 async function getChannelMessages(channelUsername) {
   try {
     const messages = await client.getMessages(channelUsername, { limit: 5 });
     if (messages.length === 0) {
-      return `Нет новых сообщений в канале ${channelUsername}`;
+      return [`Нет новых сообщений в канале ${channelUsername}`];
     }
 
-    const result = messages.map((msg) => {
+    return messages.map((msg) => {
       if (msg.message) {
         return `Текст: ${msg.message}`;
       } else if (msg.media) {
@@ -66,13 +65,12 @@ async function getChannelMessages(channelUsername) {
         return `Сообщение неизвестного формата.`;
       }
     });
-
-    return result.join('\n');
   } catch (err) {
     console.error(`Ошибка получения сообщений из канала "${channelUsername}":`, err.message);
-    return `Не удалось получить сообщения из канала "${channelUsername}".`;
+    return [`Не удалось получить сообщения из канала "${channelUsername}".`];
   }
 }
+
 
 
 connectTelegramClient();
