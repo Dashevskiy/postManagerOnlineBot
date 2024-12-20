@@ -10,7 +10,7 @@ const phone = process.env.TELEGRAM_PHONE;
 const session = new StringSession(process.env.TELEGRAM_SESSION || ''); // Используем сохранённую сессию
 const client = new TelegramClient(session, apiId, apiHash, {
     connectionRetries: 5,
-    baseDcId: 2, // Выбор дата-центра Telegram (2 - для Европы)
+    transport: 'websocket',
   });
 
   client.connect()
