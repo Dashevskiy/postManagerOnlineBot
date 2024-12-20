@@ -74,11 +74,12 @@ bot.command('get_posts', async (ctx) => {
     try {
       const messages = await getChannelMessages(channel);
 
-      if (messages.length === 0) {
-        ctx.reply(`Нет новых сообщений в канале "${channel}".`);
-      } else {
-        for (const msg of messages) {
-          await ctx.reply(msg); // Отправляем каждое сообщение отдельно
+      for (const msg of messages) {
+        if (msg.startsWith('Медиа сообщение:')) {
+          const mediaPath = msg.replace('Медиа сообщение: ', '').trim();
+          await ctx.replyWithPhoto({ source: mediaPath }); // Отправляем медиа как фото
+        } else {
+          await ctx.reply(msg); // Отправляем текстовые сообщения
         }
       }
     } catch (err) {
@@ -86,6 +87,7 @@ bot.command('get_posts', async (ctx) => {
     }
   }
 });
+
 
 
 async function watchChannelUpdates() {
