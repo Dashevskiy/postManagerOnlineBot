@@ -1,6 +1,5 @@
 const { TelegramClient } = require('telegram');
 const { StringSession } = require('telegram/sessions');
-const input = require('input'); // Для запроса кода авторизации
 require('dotenv').config();
 
 const apiId = parseInt(process.env.TELEGRAM_API_ID, 10);
@@ -8,34 +7,44 @@ const apiHash = process.env.TELEGRAM_API_HASH;
 const phone = process.env.TELEGRAM_PHONE;
 
 // Инициализация клиента с пустой сессией
-const session = new StringSession('');
+const session = new StringSession(process.env.TELEGRAM_SESSION || ''); // Используем сохранённую сессию
 const client = new TelegramClient(session, apiId, apiHash, {
   connectionRetries: 5,
 });
 
 async function connectTelegramClient() {
-  console.log('Подключение к Telegram...');
-  await client.start({
-    phoneNumber: async () => phone,
-    password: async () => await input.text('Введите пароль от двухфакторной аутентификации (если есть):'),
-    phoneCode: async () => await input.text('Введите код из Telegram:'),
-    onError: (err) => console.log(err),
-  });
-  console.log('Вы успешно авторизованы!');
-  console.log('Сессия:', client.session.save()); // Сохраните эту строку для последующего использования
-}
-
-async function getChannelMessages(channelUsername) {
   try {
-    const messages = await client.getMessages(channelUsername, { limit: 5 });
-    return messages.map((msg) => ({
-      text: msg.message || '[Медиа или другой контент]',
-      date: msg.date,
-    }));
-  } catch (err) {
-    console.error('Ошибка при получении сообщений:', err.message);
-    return [];
+    console.log('Подключение к Telegram...');
+    await client.start({
+      phoneNumber: async () => phone,
+      password: async () => '', // Если у вас нет двухфакторной аутентификации, оставьте пустым
+      phoneCode: async () => {
+        console.log('Введите код, отправленный в Telegram:');
+        const readline = require('readline').createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+
+        return new Promise((resolve) => {
+          readline.question('Код: ', (code) => {
+            readline.close();
+            resolve(code);
+          });
+        });
+      },
+      onError: (err) => {
+        console.error('Ошибка при авторизации:', err.message);
+        return Promise.reject(err);
+      },
+    });
+
+    console.log('Вы успешно авторизованы!');
+    console.log('Сессия:', client.session.save());
+  } catch (error) {
+    console.error('Ошибка подключения к Telegram:', error.message);
   }
 }
 
-module.exports = { connectTelegramClient, getChannelMessages };
+connectTelegramClient();
+
+module.exports = { connectTelegramClient, client };
