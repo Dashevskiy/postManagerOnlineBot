@@ -55,15 +55,18 @@ async function getChannelMessages(channelUsername) {
     const messages = await client.getMessages(channelUsername, { limit: 5 });
     if (messages.length === 0) {
       console.log(`Нет новых сообщений в канале ${channelUsername}`);
-    } else {
-      messages.forEach((msg) => {
-        console.log(`Сообщение: ${msg.message || 'Контент не является текстом'}`);
-      });
+      return [];
     }
+    return messages.map((msg) => ({
+      text: msg.message || 'Контент не является текстом',
+      date: msg.date,
+    }));
   } catch (err) {
     console.error(`Не удалось получить сообщения из канала "${channelUsername}":`, err.message);
+    throw err; // Передаём ошибку дальше для обработки
   }
 }
+
 
 
 connectTelegramClient();

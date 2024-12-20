@@ -1,14 +1,17 @@
 const { Telegraf } = require('telegraf');
 const { BOT_TOKEN } = require('./config');
 const { loadData, saveData } = require('./utils/dataStore');
-const { connectTelegramClient, getChannelMessages } = require('./telegramClient');
+const { connectTelegramClient, getChannelMessages, client } = require('./telegramClient');
 
 const bot = new Telegraf(BOT_TOKEN);
 const data = loadData();
 
 // Подключение к Telegram Client при запуске
-connectTelegramClient()
-  .then(() => console.log('Telegram Client подключён'))
+  connectTelegramClient()
+  .then(() => {
+    console.log('Telegram Client подключён');
+    watchChannelUpdates(); // Вызов функции отслеживания сообщений
+  })
   .catch((err) => console.error('Ошибка подключения к Telegram Client:', err.message));
 
 // Команда /start
@@ -56,17 +59,43 @@ bot.command('get_posts', async (ctx) => {
   for (const channel of userChannels) {
     try {
       const messages = await getChannelMessages(channel);
-      ctx.reply(`📢 Последние посты из канала "${channel}":`);
-
-      messages.forEach((msg) => {
-        ctx.reply(`${msg.date}: ${msg.text}`);
-      });
+      if (messages.length === 0) {
+        ctx.reply(`В канале "${channel}" пока нет новых сообщений.`);
+      } else {
+        ctx.reply(`📢 Последние посты из канала "${channel}":`);
+        messages.forEach((msg) => {
+          ctx.reply(`${msg.date}: ${msg.text}`);
+        });
+      }
     } catch (err) {
-      console.error('Ошибка при получении постов:', err.message);
+      console.error(`Ошибка при обработке канала "${channel}":`, err.message);
       ctx.reply(`Не удалось получить сообщения из канала "${channel}".`);
     }
   }
 });
+
+async function watchChannelUpdates() {
+  try {
+    const userChannels = Object.values(data)
+      .flatMap((user) => user.channels)
+      .filter((value, index, self) => self.indexOf(value) === index); // Уникальные каналы
+
+    for (const channel of userChannels) {
+      const chat = await client.getEntity(channel);
+      client.addEventHandler((event) => {
+        if (event.chatId === chat.id) {
+          Object.entries(data).forEach(([userId, userData]) => {
+            if (userData.channels.includes(channel)) {
+              bot.telegram.sendMessage(userId, `Новое сообщение из канала ${channel}: ${event.message.message}`);
+            }
+          });
+        }
+      }, { chats: [chat.id] });
+    }
+  } catch (err) {
+    console.error('Ошибка при отслеживании каналов:', err.message);
+  }
+}
 
 // Запуск бота
 bot.launch().then(() => console.log('Бот запущен!'));
