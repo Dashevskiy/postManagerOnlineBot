@@ -1,84 +1,69 @@
 const { Telegraf } = require('telegraf');
 const { BOT_TOKEN } = require('./config');
 const { loadData, saveData } = require('./utils/dataStore');
+const { connectTelegramClient, getChannelMessages } = require('./telegramClient');
 
 const bot = new Telegraf(BOT_TOKEN);
-const data = loadData(); // Загружаем сохранённые данные
+const data = loadData();
+
+// Подключение к Telegram Client при запуске
+connectTelegramClient()
+  .then(() => console.log('Telegram Client подключён'))
+  .catch((err) => console.error('Ошибка подключения к Telegram Client:', err.message));
 
 // Команда /start
 bot.start((ctx) => {
   const userId = ctx.from.id;
-  if (!data[userId]) data[userId] = { channels: [] }; // Инициализация данных пользователя
+  if (!data[userId]) data[userId] = { channels: [] };
   ctx.reply(
     'Привет! Я помогу вам получать посты из Telegram-каналов. Используйте команды:\n' +
       '/add_channel - добавить канал\n' +
       '/get_posts - получить последние посты из добавленных каналов\n' +
       '/my_channels - список добавленных каналов'
   );
-  saveData(data); // Сохраняем данные
+  saveData(data);
 });
 
-// Команда /add_channel для добавления канала
+// Команда /add_channel
 bot.command('add_channel', async (ctx) => {
   const userId = ctx.from.id;
   ctx.reply('Введите @username или ссылку на канал:');
 
   bot.on('text', async (msgCtx) => {
-    const channel = msgCtx.message.text; // Имя или ссылка на канал
+    const channel = msgCtx.message.text;
+
     if (!data[userId]) data[userId] = { channels: [] };
 
-    try {
-      const chat = await bot.telegram.getChat(channel); // Проверяем, существует ли канал
-      if (!data[userId].channels.some((ch) => ch.id === chat.id)) {
-        data[userId].channels.push({
-          id: chat.id,
-          username: chat.username || null,
-        });
-        saveData(data); // Сохраняем данные
-        msgCtx.reply(`Канал "${chat.title}" добавлен!`);
-      } else {
-        msgCtx.reply('Этот канал уже добавлен.');
-      }
-    } catch (error) {
-      console.error(error);
-      msgCtx.reply('Не удалось найти канал. Проверьте правильность ссылки или username.');
+    if (!data[userId].channels.some((ch) => ch === channel)) {
+      data[userId].channels.push(channel);
+      saveData(data);
+      msgCtx.reply(`Канал "${channel}" добавлен!`);
+    } else {
+      msgCtx.reply('Этот канал уже добавлен.');
     }
   });
 });
 
-// Команда /my_channels для отображения добавленных каналов
-bot.command('my_channels', (ctx) => {
-  const userId = ctx.from.id;
-  const userChannels = data[userId]?.channels || [];
-
-  if (userChannels.length === 0) {
-    ctx.reply('Вы ещё не добавили ни одного канала.');
-  } else {
-    const channelList = userChannels
-      .map((channel) => `- ${channel.username || `ID: ${channel.id}`}`)
-      .join('\n');
-    ctx.reply(`Ваши добавленные каналы:\n${channelList}`);
-  }
-});
-
-// Команда /get_posts для получения последних сообщений
+// Команда /get_posts
 bot.command('get_posts', async (ctx) => {
   const userId = ctx.from.id;
   const userChannels = data[userId]?.channels || [];
 
-  if (!userChannels.length) return ctx.reply('Вы ещё не добавили ни одного канала.');
+  if (!userChannels.length) {
+    return ctx.reply('Вы ещё не добавили ни одного канала.');
+  }
 
   for (const channel of userChannels) {
     try {
-      const chat = await bot.telegram.getChat(channel.id);
-      const history = await bot.telegram.getChatHistory(chat.id, { limit: 5 }); // Последние 5 сообщений
+      const messages = await getChannelMessages(channel);
+      ctx.reply(`📢 Последние посты из канала "${channel}":`);
 
-      for (const message of history.messages) {
-        ctx.reply(`📢 ${chat.title}: ${message.text || 'Медиа/контент'}`);
-      }
-    } catch (error) {
-      console.error(error);
-      ctx.reply(`Не удалось получить сообщения из канала ${channel.username || channel.id}`);
+      messages.forEach((msg) => {
+        ctx.reply(`${msg.date}: ${msg.text}`);
+      });
+    } catch (err) {
+      console.error('Ошибка при получении постов:', err.message);
+      ctx.reply(`Не удалось получить сообщения из канала "${channel}".`);
     }
   }
 });
