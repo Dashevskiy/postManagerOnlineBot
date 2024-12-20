@@ -54,19 +54,25 @@ async function getChannelMessages(channelUsername) {
   try {
     const messages = await client.getMessages(channelUsername, { limit: 5 });
     if (messages.length === 0) {
-      console.log(`Нет новых сообщений в канале ${channelUsername}`);
-      return [];
+      return `Нет новых сообщений в канале ${channelUsername}`;
     }
-    return messages.map((msg) => ({
-      text: msg.message || 'Контент не является текстом',
-      date: msg.date,
-    }));
+
+    const result = messages.map((msg) => {
+      if (msg.message) {
+        return `Текст: ${msg.message}`;
+      } else if (msg.media) {
+        return `Сообщение содержит медиа: ${msg.media.constructor.name}`;
+      } else {
+        return `Сообщение неизвестного формата.`;
+      }
+    });
+
+    return result.join('\n');
   } catch (err) {
-    console.error(`Не удалось получить сообщения из канала "${channelUsername}":`, err.message);
-    throw err; // Передаём ошибку дальше для обработки
+    console.error(`Ошибка получения сообщений из канала "${channelUsername}":`, err.message);
+    return `Не удалось получить сообщения из канала "${channelUsername}".`;
   }
 }
-
 
 
 connectTelegramClient();

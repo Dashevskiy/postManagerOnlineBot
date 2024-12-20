@@ -72,18 +72,10 @@ bot.command('get_posts', async (ctx) => {
 
   for (const channel of userChannels) {
     try {
-      const messages = await getChannelMessages(channel);
-      if (messages.length === 0) {
-        ctx.reply(`В канале "${channel}" пока нет новых сообщений.`);
-      } else {
-        ctx.reply(`📢 Последние посты из канала "${channel}":`);
-        messages.forEach((msg) => {
-          ctx.reply(`${msg.date}: ${msg.text}`);
-        });
-      }
+      const result = await getChannelMessages(channel);
+      ctx.reply(`📢 Последние посты из канала "${channel}":\n${result}`);
     } catch (err) {
-      console.error(`Ошибка при обработке канала "${channel}":`, err.message);
-      ctx.reply(`Не удалось получить сообщения из канала "${channel}".`);
+      ctx.reply(`Не удалось получить сообщения из канала "${channel}": ${err.message}`);
     }
   }
 });
