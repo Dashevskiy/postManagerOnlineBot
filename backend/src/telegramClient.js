@@ -9,8 +9,13 @@ const phone = process.env.TELEGRAM_PHONE;
 // Инициализация клиента с пустой сессией
 const session = new StringSession(process.env.TELEGRAM_SESSION || ''); // Используем сохранённую сессию
 const client = new TelegramClient(session, apiId, apiHash, {
-  connectionRetries: 5,
-});
+    connectionRetries: 5,
+    baseDcId: 2, // Выбор дата-центра Telegram (2 - для Европы)
+  });
+
+  client.connect()
+  .then(() => console.log('Telegram Client подключён!'))
+  .catch((err) => console.error('Ошибка подключения:', err.message));
 
 async function connectTelegramClient() {
   try {
