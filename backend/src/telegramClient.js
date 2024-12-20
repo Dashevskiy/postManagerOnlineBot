@@ -50,6 +50,22 @@ async function connectTelegramClient() {
   }
 }
 
+async function getChannelMessages(channelUsername) {
+  try {
+    const messages = await client.getMessages(channelUsername, { limit: 5 });
+    if (messages.length === 0) {
+      console.log(`Нет новых сообщений в канале ${channelUsername}`);
+    } else {
+      messages.forEach((msg) => {
+        console.log(`Сообщение: ${msg.message || 'Контент не является текстом'}`);
+      });
+    }
+  } catch (err) {
+    console.error(`Не удалось получить сообщения из канала "${channelUsername}":`, err.message);
+  }
+}
+
+
 connectTelegramClient();
 
-module.exports = { connectTelegramClient, client };
+module.exports = { connectTelegramClient, client, getChannelMessages };
